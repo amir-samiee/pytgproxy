@@ -1,0 +1,4 @@
+{
+    "name": "Ubuntu 20.04 Environment",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-20.04"
+}

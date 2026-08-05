@@ -1,0 +1,8 @@
+dotenv==0.9.9
+markdown-it-py==3.0.0
+mdurl==0.1.2
+pygments==2.19.2
+python-dotenv==1.0.1
+python-telegram==0.18.0
+rich==14.3.4
+telegram-text==0.2.0

@@ -9,7 +9,7 @@ def resolve_name(obj):
     return o_type
 
 
-def asdict(obj) -> dict[Any, Any]:
+def asdict(obj):
     if is_dataclass(obj):
         result = {}
         for f in fields(obj):
@@ -49,7 +49,7 @@ class ProxyTypeMtproto:
         return "proxyTypeMtproto"
 
 
-ProxyType = ProxyTypeSocks5 | ProxyTypeHttp | ProxyTypeMtproto
+# ProxyType = ProxyTypeSocks5 | ProxyTypeHttp | ProxyTypeMtproto
 
 TYPES = {
     "http": ProxyTypeHttp,
@@ -62,7 +62,8 @@ TYPES = {
 class Proxy:
     server: str
     port: int
-    type: ProxyType
+    # type: ProxyType
+    type: Any
 
     @classmethod
     def from_uri(cls, uri: str):
@@ -94,7 +95,7 @@ class AddedProxy:
 
 @dataclass
 class AddedProxies:
-    proxies: list[AddedProxy]
+    proxies: list
 
 
 # ─────────────────────────────────── #

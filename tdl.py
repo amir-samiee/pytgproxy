@@ -1,11 +1,5 @@
 """more help on: https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1_function.html"""
 
-# import os
-
-# for x in os.environ:
-#     if "prox" in x.lower():
-#         os.environ.pop(x)
-
 import logging
 from pathlib import Path
 
@@ -25,28 +19,21 @@ def test(tg: Telegram, proxy_uris):
         proxy = Proxy.from_uri(uri)
         ping = tg.call_method(
             "pingProxy",
-            # "testProxy",
-            {
-                "proxy": None,
-                # asdict(proxy),
-                # "tc_id": 2,
-                # "timeout": 10.0,
-            },
+            {"proxy": asdict(proxy)},
         )
-        ping.wait()
         try:
-            ...
+            ping.wait(TIMEOUT)
         except KeyboardInterrupt:
             break
-        except BaseException as err:
-            ...
+        except TimeoutError:
+            logging.warning("timed out (%d); skipping...", TIMEOUT)
         else:
-            ...
+            logging.info("ping: %s", ping.update)
 
 
 def main():
     try:
-        envvars = {k: v for k, v in dotenv_values().items() if v}
+        envvars: dict = dotenv_values()
         tg = Telegram(
             tdlib_verbosity=0,
             api_id=int(envvars["API_ID"]),
@@ -75,7 +62,6 @@ if __name__ == "__main__":
         ],
     )
     logging.warning(
-        "Running this script INSIDE WSL might not "
-        "work if there's a proxy running OUTSIDE WSL"
+        "Running this script INSIDE WSL might not work if there's a proxy running OUTSIDE WSL"
     )
     main()
