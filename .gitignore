@@ -3,3 +3,5 @@ lab.py
 proxies.txt
 types.json
 __pycache__
+*.log
+.tmpcdrnr.python

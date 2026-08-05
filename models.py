@@ -1,12 +1,9 @@
-# from dataclasses import asdict as _asdict
 from dataclasses import dataclass, fields, is_dataclass
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-# asdict = _asdict
 
-
-def type_rename(obj):
+def resolve_name(obj):
     o_type = obj if isinstance(obj, str) else type(obj).__name__
     o_type = o_type[0].lower() + o_type[1:]
     return o_type
@@ -16,8 +13,8 @@ def asdict(obj) -> dict[Any, Any]:
     if is_dataclass(obj):
         result = {}
         for f in fields(obj):
-            result[type_rename(f.name)] = asdict(getattr(obj, f.name))
-        result["@type"] = type_rename(obj)
+            result[resolve_name(f.name)] = asdict(getattr(obj, f.name))
+        result["@type"] = resolve_name(obj)
         return result
     return obj
 
@@ -76,7 +73,10 @@ class Proxy:
 
         server = params.pop("server")
         port = int(params.pop("port"))
-        type_class = TYPES[type_string](**params)
+        TYPE = TYPES[type_string]
+        valid_keys = [field.name for field in fields(TYPE)]
+        valid_params = {k: params[k] for k in valid_keys if k in params}
+        type_class = TYPE(**valid_params)
 
         return Proxy(server, port, type_class)
 
