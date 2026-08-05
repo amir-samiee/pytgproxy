@@ -1,3 +1,5 @@
 .env
 lab.py
 proxies.txt
+types.json
+__pycache__

@@ -1,5 +1,6 @@
-from dataclasses import asdict as _asdict
+# from dataclasses import asdict as _asdict
 from dataclasses import dataclass, fields, is_dataclass
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 # asdict = _asdict
@@ -11,7 +12,7 @@ def type_rename(obj):
     return o_type
 
 
-def asdict(obj):
+def asdict(obj) -> dict[Any, Any]:
     if is_dataclass(obj):
         result = {}
         for f in fields(obj):
@@ -19,18 +20,6 @@ def asdict(obj):
         result["@type"] = type_rename(obj)
         return result
     return obj
-
-
-# def asdict(obj):
-#     default = _asdict(obj) if is_dataclass(obj) else obj
-#     o_type = type(obj).__name__
-#     o_type = o_type[0].lower() + o_type[1:]
-#     print(o_type)
-#     default["@type"] = o_type
-#     for key, value in default.items():
-#         if is_dataclass(value):
-#             default[key] = asdict(value)
-#     return default
 
 
 @dataclass
@@ -119,21 +108,25 @@ class Seconds:
 # ─────────────────────────────────── #
 
 
+@dataclass
 class AddProxy:
     proxy: Proxy
     enable: bool
 
 
+@dataclass
 class EditProxy:
     proxy_id: int
     proxy: Proxy
     enable: bool
 
 
+@dataclass
 class EnableProxy:
     proxy_id: int
 
 
+@dataclass
 class RemoveProxy:
     proxy_id: int
 
