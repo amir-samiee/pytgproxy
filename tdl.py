@@ -14,6 +14,7 @@ TIMEOUT = 5
 
 
 def test(tg: Telegram, proxy_uris):
+    results = []
     for i, uri in enumerate(proxy_uris, 1):
         logging.info(f"pinging {i}/{len(proxy_uris)}...")
         proxy = Proxy.from_uri(uri)
@@ -28,7 +29,10 @@ def test(tg: Telegram, proxy_uris):
         except TimeoutError:
             logging.warning("timed out (%d); skipping...", TIMEOUT)
         else:
-            logging.info("ping: %s", ping.update)
+            secs = float(ping.update.get("seconds", -1)) if ping.update else -2
+            results.append((secs, uri))
+    results.sort()
+    return results
 
 
 def main():
@@ -44,8 +48,11 @@ def main():
         )
         login_state = tg.login()
         logging.info(login_state)
-        uris = Path("proxies.txt").read_text().splitlines()
-        test(tg, uris)
+        path = Path("proxies.txt")
+        uris = path.read_text().splitlines()
+        results = test(tg, uris)
+        path.write_text("\n".join(uri for _, uri in results))
+        print(*[sec for sec, _ in results], sep="\t")
     except KeyboardInterrupt:
         print("", end="\r")
         logging.info("user demanded exit")
