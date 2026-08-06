@@ -28,5 +28,6 @@ def refine_proxy_file(filepath, key=len):
 if __name__ == "__main__":
     filename = "proxies.txt"
     with open(filename, "a") as file:
+        file.write("\n")
         file.write("\n".join(fetch_proxies()))
     refine_proxy_file(filename)
