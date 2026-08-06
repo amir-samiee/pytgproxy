@@ -10,7 +10,7 @@ from telegram.client import Telegram
 
 from models import *
 
-TIMEOUT = 5
+TIMEOUT = 10
 
 
 def test(tg: Telegram, proxy_uris):
@@ -23,8 +23,6 @@ def test(tg: Telegram, proxy_uris):
         )
         try:
             ping.wait(TIMEOUT)
-        except KeyboardInterrupt:
-            break
         except TimeoutError:
             logging.warning("timed out (%d); skipping...", TIMEOUT)
         else:
@@ -36,14 +34,15 @@ def main():
         envvars: dict = dotenv_values()
         tg = Telegram(
             tdlib_verbosity=0,
+            files_directory=envvars.get("FILES_DIR"),
             api_id=int(envvars["API_ID"]),
             api_hash=envvars["API_HASH"],
             bot_token=envvars["BOT_TOKEN"],
             library_path=envvars["LIB_PATH"],
             database_encryption_key=envvars["ENCRYPTION_KEY"],
         )
-        login_state = tg.login()
-        logging.info(login_state)
+        # login_state = tg.login()
+        # logging.info(login_state)
         uris = Path("proxies.txt").read_text().splitlines()
         test(tg, uris)
     except KeyboardInterrupt:
@@ -62,6 +61,7 @@ if __name__ == "__main__":
         ],
     )
     logging.warning(
-        "Running this script INSIDE WSL might not work if there's a proxy running OUTSIDE WSL"
+        "Running this script INSIDE WSL might not "  ##
+        "work if there's a proxy running OUTSIDE WSL"
     )
     main()

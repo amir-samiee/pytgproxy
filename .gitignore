@@ -5,3 +5,6 @@ types.json
 __pycache__
 *.log
 .tmpcdrnr.python
+.telegram
+.vscode
+.venv
