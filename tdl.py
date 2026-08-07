@@ -11,7 +11,7 @@ from telegram.client import Telegram
 from models import *
 from utils import load_proxies
 
-TIMEOUT = 3
+TIMEOUT = None
 
 
 def test(tg: Telegram, proxies):
@@ -23,10 +23,9 @@ def test(tg: Telegram, proxies):
             {"proxy": asdict(proxy)},
         )
         try:
-            ping.wait(TIMEOUT, raise_exc=True)
+            ping.wait(TIMEOUT, raise_exc=False)
         except TimeoutError:
             logging.warning("timed out (%d); skipping...", TIMEOUT)
-            tg.call_method("close")
         except Exception as err:
             logging.error("tdlib error: %s", err)
         else:
@@ -49,8 +48,8 @@ def main():
             database_encryption_key=envvars["ENCRYPTION_KEY"],
         )
         sleep(1)
-        # login_state = tg.login()
-        # logging.info(login_state)
+        login_state = tg.login()
+        logging.info(login_state)
         proxies = load_proxies()
         results = test(tg, proxies)  # noqa: F841
     except KeyboardInterrupt:
