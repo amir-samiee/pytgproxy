@@ -50,6 +50,9 @@ BOT_TOKEN=your_bot_token
 LIB_PATH=path/to/libtdjson.so  # e.g., /usr/local/lib/libtdjson.so
 FILES_DIR=./tdlib_files
 ENCRYPTION_KEY=your_encryption_key
+
+# Proxy configuration
+PROXY_POOLS=https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt
 ```
 
 ### Getting Telegram API Credentials
@@ -94,7 +97,7 @@ This tool supports the following Telegram proxy types:
 ## Output Files
 
 - `proxies.txt`: List of proxy URIs to test
-- `results.csv`: Test results with response times (seconds, proxy URI)
+- `results.csv`: Test results with response times (milliseconds, proxy URI)
 - `.log`: Application log file
 
 ## Development
@@ -111,13 +114,18 @@ To use:
 2. Click "Reopen in Container" if/when prompted
 3. Or use the Remote-Containers extension to rebuild the container
 
+### To Do Next
+- make a pull request for the modifications required to make this code's requirements compatible with windows os
+- bypass/eliminate the requirement of having an actual application + api specs
+- add the ability to start the worker with a proxy so there's no need to an external vpn/proxy for initial connection
+- provide a more dedicated, wider proxy collector
+
 ## License
 
 raise NotImplementedError()
 
 ## Acknowledgments
 
+- [Telegram TDLib](https://github.com/tdlib/td) - Telegram Database Library
 - [python-telegram](https://github.com/alexander-akhmetov/python-telegram) - Python bindings for TDLib
 - [Rich](https://github.com/Textualize/rich) - For prettified console output which makes development unbelievably easier
-- [SoliSpirit/mtproto](https://github.com/SoliSpirit/mtproto) - Proxy list source
-- [Telegram TDLib](https://github.com/tdlib/td) - Telegram Database Library

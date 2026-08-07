@@ -74,7 +74,7 @@ class Proxy:
         try:
             parsed = urlparse(uri)
 
-            type_string = parsed.path.partition("/")[-1]
+            type_string = parsed.netloc if parsed.scheme == "tg" else parsed.path.partition("/")[-1]
             params = {x: y.pop() for x, y in parse_qs(parsed.query).items()}
 
             server = params.pop("server")

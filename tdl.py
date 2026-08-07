@@ -9,7 +9,7 @@ from rich.logging import RichHandler
 from telegram.client import Telegram
 
 from models import *
-from utils import *
+from proxy import dump_results, load_proxies
 
 TIMEOUT = None
 
@@ -23,16 +23,24 @@ def test_proxies(tg: Telegram, proxies):
             {"proxy": asdict(proxy)},
         )
         try:
-            ping.wait(TIMEOUT, raise_exc=False)
+            ping.wait(TIMEOUT, raise_exc=True)
         except TimeoutError:
             logging.warning("timed out (%d); skipping...", TIMEOUT)
         except Exception as err:
-            logging.error("tdlib error: %s", err)
+            info = ping.error_info
+            if info:
+                logging.error(
+                    "code: %d | message: %s",
+                    info["code"],
+                    info["message"],
+                )
+            else:
+                logging.error(err)
         else:
             secs = float(ping.update.get("seconds", -1)) if ping.update else -2
             uri = proxy.uri
             if secs > 0:
-                logging.info("ping: %f \t proxy: %s", secs, uri)
+                logging.info("ping: %dms | proxy: %s", 1000 * secs, uri)
             results.append((secs, uri))
     results.sort()
     return results
@@ -64,11 +72,12 @@ def main():
 
 
 if __name__ == "__main__":
+    handlers = [
+        RichHandler(),
+        logging.FileHandler(".log", "w"),
+    ]
     logging.basicConfig(
         level=logging.DEBUG,
-        handlers=[
-            RichHandler(),
-            logging.FileHandler(".log", "w"),
-        ],
+        handlers=handlers,
     )
     main()
