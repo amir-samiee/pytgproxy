@@ -19,7 +19,7 @@ def fetch_proxies(urls=proxy_resources):
 def refine_proxy_file(filepath, key=len):
     path = Path(filepath)
     proxies = set(path.read_text().splitlines())
-    proxies = filter(lambda p: Proxy.from_uri(p).port in [80, 443, 8443], proxies)
+    proxies = filter(lambda p: Proxy.from_uri(p), proxies)
     if key:
         proxies = sorted(proxies, key=key)
     path.write_text("\n".join(proxies))

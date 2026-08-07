@@ -1,6 +1,7 @@
+import logging
 from dataclasses import dataclass, fields, is_dataclass
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 
 def resolve_name(obj):
@@ -62,24 +63,49 @@ TYPES = {
 class Proxy:
     server: str
     port: int
-    # type: ProxyType
     type: Any
+
+    @property
+    def uri(self):
+        return Proxy.to_uri(self)
 
     @classmethod
     def from_uri(cls, uri: str):
-        parsed = urlparse(uri)
+        try:
+            parsed = urlparse(uri)
 
-        type_string = parsed.path.partition("/")[-1]
-        params = {x: y.pop() for x, y in parse_qs(parsed.query).items()}
+            type_string = parsed.path.partition("/")[-1]
+            params = {x: y.pop() for x, y in parse_qs(parsed.query).items()}
 
-        server = params.pop("server")
-        port = int(params.pop("port"))
-        TYPE = TYPES[type_string]
-        valid_keys = [field.name for field in fields(TYPE)]
-        valid_params = {k: params[k] for k in valid_keys if k in params}
-        type_class = TYPE(**valid_params)
-
+            server = params.pop("server")
+            port = int(params.pop("port"))
+            TYPE = TYPES[type_string]
+            valid_keys = [field.name for field in fields(TYPE)]
+            valid_params = {k: params[k] for k in valid_keys if k in params}
+            type_class = TYPE(**valid_params)
+        except BaseException as err:
+            logging.error("an error occurred during conversion: %s", err)
+            return None
         return Proxy(server, port, type_class)
+
+    @classmethod
+    def to_uri(cls, obj: "Proxy") -> str:
+        type_string = None
+        for k, v in TYPES.items():
+            if isinstance(obj.type, v):
+                type_string = k
+                break
+        if type_string is None:
+            raise ValueError(f"Unknown proxy type: {type(obj.type)}")
+        params = {"server": obj.server, "port": str(obj.port)}
+        valid_keys = [f.name for f in fields(obj)]
+        for k in valid_keys:
+            if hasattr(obj.type, k):
+                v = getattr(obj.type, k)
+                params[k] = v
+        query = urlencode(params, doseq=False)
+        path = f"/{type_string}"
+        return urlunparse(("https", "t.me", path, "", query, ""))
 
 
 # ─────────────────────────────────── #
