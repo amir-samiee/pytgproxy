@@ -1,6 +1,7 @@
 .env
 lab.py
 proxies.txt
+results.csv
 types.json
 __pycache__
 *.log

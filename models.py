@@ -95,15 +95,12 @@ class Proxy:
             if isinstance(obj.type, v):
                 type_string = k
                 break
-        if type_string is None:
-            raise ValueError(f"Unknown proxy type: {type(obj.type)}")
+        assert type_string
         params = {"server": obj.server, "port": str(obj.port)}
-        valid_keys = [f.name for f in fields(obj)]
+        valid_keys = [f.name for f in fields(obj.type)]
         for k in valid_keys:
-            if hasattr(obj.type, k):
-                v = getattr(obj.type, k)
-                params[k] = v
-        query = urlencode(params, doseq=False)
+            params[k] = getattr(obj.type, k)
+        query = urlencode(params)
         path = f"/{type_string}"
         return urlunparse(("https", "t.me", path, "", query, ""))
 
