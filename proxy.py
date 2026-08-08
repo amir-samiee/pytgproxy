@@ -7,7 +7,7 @@ from dotenv import dotenv_values
 
 from models import Proxy
 
-proxy_pools = (dotenv_values()["PROXY_POOLS"] or "").split(",")
+proxy_pools = (dotenv_values()["PROXY_POOLS"] or "").split()
 
 
 def fetch_proxies(urls=proxy_pools):

@@ -74,10 +74,10 @@ def main():
 if __name__ == "__main__":
     handlers = [
         RichHandler(),
-        logging.FileHandler(".log", "w"),
+        logging.FileHandler(".log", "a"),
     ]
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         handlers=handlers,
     )
     main()

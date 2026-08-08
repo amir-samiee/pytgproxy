@@ -116,9 +116,9 @@ To use:
 
 ### To Do Next
 - make a pull request for the modifications required to make this code's requirements compatible with windows os
-- bypass/eliminate the requirement of having an actual application + api specs
+<!-- - bypass/eliminate the requirement of having an actual application + api specs -->
 - add the ability to start the worker with a proxy so there's no need to an external vpn/proxy for initial connection
-- provide a more dedicated, wider proxy collector
+<!-- - provide a more dedicated, wider proxy collector -->
 
 ## License
 
