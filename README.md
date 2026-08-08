@@ -9,20 +9,14 @@ A Python tool for testing and managing Telegram proxy servers. This utility help
 - **Results Export**: Saves test results to CSV for analysis
 - **Proxy Types**: Supports SOCKS5, HTTP, and MTProto proxy types
 - **Configuration**: Environment-based configuration for keys and setup
-
-### Upcoming Major Upgrade In Progress
-
-I'm working on a significant update that will:
-- Eliminate the need for API keys (bypass/remove the requirement for actual application + API specs)
-
-Stay tuned.
+- **No-API Mode**: Test proxies without requiring Telegram API credentials
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.7+
 - [TDLib](https://core.telegram.org/tdlib) (Telegram Database Library)
+- Python 3.12+ (tested on 3.13, the primary version restriction is due to itertools.batched function; replace/implement it and 3.7+ should be fine as well)
 
 ### Setup
 
@@ -45,6 +39,7 @@ Stay tuned.
 
 ## Configuration
 
+### For Standard Mode (with API credentials)
 Create a `.env` file in the project root with the following variables:
 
 ```ini
@@ -62,7 +57,18 @@ ENCRYPTION_KEY=your_encryption_key
 PROXY_POOLS=https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt
 ```
 
-### Getting Telegram API Credentials
+### For No-API Mode (Demo)
+Only requires TDLib configuration:
+
+```ini
+# TDLib configuration
+LIB_PATH=path/to/libtdjson.so  # e.g., /usr/local/lib/libtdjson.so
+
+# Proxy configuration
+PROXY_POOLS=https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt
+```
+
+### Getting Telegram API Credentials (Optional for No-API Mode)
 
 1. Go to [https://my.telegram.org](https://my.telegram.org)
 2. Log in with your Telegram account
@@ -84,14 +90,26 @@ This will:
 
 ### Test Proxies
 
+#### Standard Mode (with API credentials)
 ```bash
 python main.py
 ```
 
 This will:
 - Load proxies from `proxies.txt`
-- Test each proxy's connectivity and response time
+- Test each proxy's connectivity and response time using Telegram API
 - Save results to `results.csv`
+
+#### No-API Mode (without API credentials)
+```bash
+python noapi.py
+```
+
+This will:
+- Load proxies from `proxies.txt`
+- Test each proxy's connectivity and response time using TDJson directly
+- Save results to `results.csv`
+- **No Telegram API credentials required**
 
 ## Proxy Types Supported
 
@@ -121,6 +139,21 @@ To use:
 2. Click "Reopen in Container" if/when prompted
 3. Or use the Remote-Containers extension to rebuild the container
 
+## Implementation Details
+
+### Architecture Overview
+The project now offers two testing approaches:
+
+1. **Standard Mode (`main.py`)**:
+   - Uses the full `python-telegram` client
+   - Requires valid Telegram API credentials
+   - Provides complete Telegram client functionality
+
+2. **No-API Mode (`noapi.py`)**:
+   - Uses TDJson directly with mocked parameters
+   - No API credentials required
+   - Lightweight implementation focused solely on proxy testing
+   - Uses batch processing for improved performance
 
 ## License
 
@@ -131,3 +164,4 @@ This project is licensed under the GNU General Public License (GPL) Version 3.
 - [python-telegram](https://github.com/alexander-akhmetov/python-telegram) - Python bindings for TDLib
 - [Rich](https://github.com/Textualize/rich) - For prettified console output which makes development unbelievably easier
 - Devin AI from [DeepWiki](https://deepwiki.com) - For AI-powered development assistance that made this project possible
+- Devstral by Mistral AI - For performing handy tasks such as drafting this very README (except the current line obvi)
