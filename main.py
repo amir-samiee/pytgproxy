@@ -9,7 +9,7 @@ from rich.logging import RichHandler
 from telegram.client import Telegram
 
 from models import *
-from proxy import dump_results, load_proxies
+from proxy import *
 
 TIMEOUT = None
 
@@ -46,18 +46,44 @@ def test_proxies(tg: Telegram, proxies):
     return results
 
 
+def get_telegram(use_environ=True, **params):
+    """
+    Initialize a Telegram client using the given parameters as the first priority
+    and falling back to environment variables in case of absence of any key.
+
+    Args:
+        use_environ (bool): whether to use environment variables as fallback (or empty dict() otherwise)
+        params (dict): Optional parameters to override environment variables.
+
+    Returns:
+        Telegram: An initialized Telegram client instance.
+    """
+    envvars: dict = dotenv_values() if use_environ else {}
+    envvars.update(params)
+    tg = Telegram(
+        tdlib_verbosity=0,
+        files_directory=envvars.get("FILES_DIR"),
+        api_id=int(envvars["API_ID"]),
+        api_hash=envvars["API_HASH"],
+        bot_token=envvars["BOT_TOKEN"],
+        library_path=envvars["LIB_PATH"],
+        database_encryption_key=envvars["ENCRYPTION_KEY"],
+    )
+    return tg
+
+
+def setup_logging(level=logging.INFO):
+    handlers = [
+        RichHandler(log_time_format="%X", show_path=False),
+        logging.FileHandler(".log", "a"),
+    ]
+    logging.basicConfig(level=level, handlers=handlers)
+
+
 def main():
-    envvars: dict = dotenv_values()
+    setup_logging()
     try:
-        tg = Telegram(
-            tdlib_verbosity=0,
-            files_directory=envvars.get("FILES_DIR"),
-            api_id=int(envvars["API_ID"]),
-            api_hash=envvars["API_HASH"],
-            bot_token=envvars["BOT_TOKEN"],
-            library_path=envvars["LIB_PATH"],
-            database_encryption_key=envvars["ENCRYPTION_KEY"],
-        )
+        tg = get_telegram()
         sleep(1)
         login_state = tg.login()
         logging.info(login_state)
@@ -72,12 +98,4 @@ def main():
 
 
 if __name__ == "__main__":
-    handlers = [
-        RichHandler(),
-        logging.FileHandler(".log", "a"),
-    ]
-    logging.basicConfig(
-        level=logging.INFO,
-        handlers=handlers,
-    )
     main()

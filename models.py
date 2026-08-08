@@ -84,7 +84,7 @@ class Proxy:
             valid_params = {k: params[k] for k in valid_keys if k in params}
             type_class = TYPE(**valid_params)
         except BaseException as err:
-            logging.error("an error occurred during conversion: %s", err)
+            logging.debug("an error occurred during conversion: %s", err)
             return None
         return Proxy(server, port, type_class)
 

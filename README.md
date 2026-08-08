@@ -1,4 +1,4 @@
-# Telegram Proxy Tester
+# PyTgProxy: Python Telegram Proxy Tester
 
 A Python tool for testing and managing Telegram proxy servers. This utility helps you find and verify working Telegram proxies by pinging them and measuring their response times.
 
@@ -9,6 +9,13 @@ A Python tool for testing and managing Telegram proxy servers. This utility help
 - **Results Export**: Saves test results to CSV for analysis
 - **Proxy Types**: Supports SOCKS5, HTTP, and MTProto proxy types
 - **Configuration**: Environment-based configuration for keys and setup
+
+### Upcoming Major Upgrade In Progress
+
+I'm working on a significant update that will:
+- Eliminate the need for API keys (bypass/remove the requirement for actual application + API specs)
+
+Stay tuned.
 
 ## Installation
 
@@ -78,7 +85,7 @@ This will:
 ### Test Proxies
 
 ```bash
-python tdl.py
+python main.py
 ```
 
 This will:
@@ -114,18 +121,13 @@ To use:
 2. Click "Reopen in Container" if/when prompted
 3. Or use the Remote-Containers extension to rebuild the container
 
-### To Do Next
-- make a pull request for the modifications required to make this code's requirements compatible with windows os
-<!-- - bypass/eliminate the requirement of having an actual application + api specs -->
-- add the ability to start the worker with a proxy so there's no need to an external vpn/proxy for initial connection
-<!-- - provide a more dedicated, wider proxy collector -->
 
 ## License
 
-raise NotImplementedError()
+This project is licensed under the GNU General Public License (GPL) Version 3.
 
 ## Acknowledgments
-
 - [Telegram TDLib](https://github.com/tdlib/td) - Telegram Database Library
 - [python-telegram](https://github.com/alexander-akhmetov/python-telegram) - Python bindings for TDLib
 - [Rich](https://github.com/Textualize/rich) - For prettified console output which makes development unbelievably easier
+- Devin AI from [DeepWiki](https://deepwiki.com) - For AI-powered development assistance that made this project possible
