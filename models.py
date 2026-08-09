@@ -1,22 +1,10 @@
 import logging
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import dataclass, fields
+from itertools import batched
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-
-def resolve_name(obj):
-    o_type = obj if isinstance(obj, str) else type(obj).__name__
-    o_type = o_type[0].lower() + o_type[1:]
-    return o_type
-
-
-def asdict(obj):
-    if is_dataclass(obj):
-        result = {}
-        for f in fields(obj):
-            result[resolve_name(f.name)] = asdict(getattr(obj, f.name))
-        result["@type"] = resolve_name(obj)
-        return result
-    return obj
+from dotenv import dotenv_values
+from telegram.tdjson import TDJson
 
 
 @dataclass
@@ -102,3 +90,73 @@ class Proxy:
         query = urlencode(params)
         path = f"/{type_string}"
         return urlunparse(("https", "t.me", path, "", query, ""))
+
+
+from manager import asdict
+
+
+class Mint:
+    """Mini Telegram Representative Object for TDJson's API, tailored for this specific purpose"""
+
+    @classmethod
+    def mock_params(cls):
+        return {
+            "@type": "setTdlibParameters",
+            "api_id": 1,  # type matters
+            "files_directory": ".tel",  # to keep the dir-tree clean
+            "system_language_code": "en",
+            "device_model": "mock",
+            "application_version": "pock",
+            "api_hash": "hock",  # all the provided keys are required
+            "@extra": {"request_id": "params"},
+        }
+
+    def __init__(self):
+        self.tg = self.init_telegram()
+        self.results = []
+
+    def init_telegram(self):
+        envvars = dotenv_values()
+        tg = TDJson(envvars["LIB_PATH"], 0)
+        tg.send(self.mock_params())
+        # to keep receiving updates until the
+        # expected initial communication ends
+        while True:  # ...
+            value = tg.receive() or {}
+            if value.get("@type") == "updateConnectionState":
+                break
+        return tg
+
+    def test(self, proxies: list[Proxy], batch_size=64):
+        self._tests = proxies
+        i = 0
+        for batch in batched(proxies, batch_size):
+            for proxy in batch:
+                query = {
+                    "@type": "pingProxy",
+                    "proxy": asdict(proxy),
+                    "@extra": {"i": i},
+                }
+                self.tg.send(query)
+                i += 1
+            for proxy in batch:
+                result = self.tg.receive()
+                self.handle_result(result)
+
+    def handle_result(self, result):
+        if not (
+            result  ##
+            and (extra := result.get("@extra"))
+            and (i := extra.get("i"))
+        ):
+            return
+
+        proxy = self._tests[i]
+        uri = proxy.uri
+
+        if result["@type"] == "seconds":
+            ms = int(result["seconds"] * 1000)
+            logging.info(" [%4d] %4d ms: %s", i, ms, uri)
+            self.results.append((ms, uri))
+        else:
+            logging.error("[%4d] error %3d: %s (%s)", i, result["code"], result["message"], uri)
