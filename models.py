@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, is_dataclass
 from itertools import batched
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -92,7 +92,20 @@ class Proxy:
         return urlunparse(("https", "t.me", path, "", query, ""))
 
 
-from manager import asdict
+def _resolve_name(obj):
+    o_type = obj if isinstance(obj, str) else type(obj).__name__
+    o_type = o_type[0].lower() + o_type[1:]
+    return o_type
+
+
+def _asdict(obj):
+    if is_dataclass(obj):
+        result = {}
+        for f in fields(obj):
+            result[_resolve_name(f.name)] = _asdict(getattr(obj, f.name))
+        result["@type"] = _resolve_name(obj)
+        return result
+    return obj
 
 
 class Mint:
@@ -103,11 +116,11 @@ class Mint:
         return {
             "@type": "setTdlibParameters",
             "api_id": 1,  # type matters
-            "files_directory": ".tel",  # to keep the dir-tree clean
+            "files_directory": ".telegram",  # to keep the dir-tree clean
             "system_language_code": "en",
-            "device_model": "mock",
+            "device_model": "mock",  # all the provided keys are required
             "application_version": "pock",
-            "api_hash": "hock",  # all the provided keys are required
+            "api_hash": "hock",
             "@extra": {"request_id": "params"},
         }
 
@@ -134,7 +147,7 @@ class Mint:
             for proxy in batch:
                 query = {
                     "@type": "pingProxy",
-                    "proxy": asdict(proxy),
+                    "proxy": _asdict(proxy),
                     "@extra": {"i": i},
                 }
                 self.tg.send(query)
@@ -151,7 +164,7 @@ class Mint:
         ):
             return
 
-        proxy = self._tests[i]
+        proxy: Proxy = self._tests[i]
         uri = proxy.uri
 
         if result["@type"] == "seconds":
@@ -159,4 +172,5 @@ class Mint:
             logging.info(" [%4d] %4d ms: %s", i, ms, uri)
             self.results.append((ms, uri))
         else:
-            logging.error("[%4d] error %3d: %s (%s)", i, result["code"], result["message"], uri)
+            _, _, address = uri.partition("://")
+            logging.error("[%4d] error %3d: %s %s", i, result["code"], result["message"], address)
