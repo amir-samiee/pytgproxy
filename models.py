@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass, fields, is_dataclass
-from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 
@@ -50,12 +49,12 @@ class ProxyTypeMtproto:
         return "proxyTypeMtproto"
 
 
-# ProxyType = ProxyTypeSocks5 | ProxyTypeHttp | ProxyTypeMtproto
+ProxyType = ProxyTypeSocks5 | ProxyTypeHttp | ProxyTypeMtproto
 
 TYPES = {
-    "http": ProxyTypeHttp,
     "proxy": ProxyTypeMtproto,
     "socks": ProxyTypeSocks5,
+    "http": ProxyTypeHttp,
 }
 
 
@@ -63,7 +62,7 @@ TYPES = {
 class Proxy:
     server: str
     port: int
-    type: Any
+    type: ProxyType
 
     @property
     def uri(self):
@@ -103,58 +102,3 @@ class Proxy:
         query = urlencode(params)
         path = f"/{type_string}"
         return urlunparse(("https", "t.me", path, "", query, ""))
-
-
-# ─────────────────────────────────── #
-
-
-@dataclass
-class AddedProxy:
-    id: int
-    last_used_date: int
-    is_enabled: bool
-    proxy: Proxy
-
-
-@dataclass
-class AddedProxies:
-    proxies: list
-
-
-# ─────────────────────────────────── #
-
-
-@dataclass
-class Seconds:
-    seconds: float
-
-
-# ─────────────────────────────────── #
-
-
-@dataclass
-class AddProxy:
-    proxy: Proxy
-    enable: bool
-
-
-@dataclass
-class EditProxy:
-    proxy_id: int
-    proxy: Proxy
-    enable: bool
-
-
-@dataclass
-class EnableProxy:
-    proxy_id: int
-
-
-@dataclass
-class RemoveProxy:
-    proxy_id: int
-
-
-@dataclass
-class PingProxy:
-    proxy: Proxy

@@ -1,12 +1,14 @@
+"""more help on: https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1_function.html"""
+
 import logging
 from itertools import batched
 
 from dotenv import dotenv_values
+from rich.logging import RichHandler
 from telegram.tdjson import TDJson
 
-from main import dump_results, load_proxies, setup_logging
-from models import asdict
-from proxy import Proxy
+from models import *
+from proxy import *
 
 
 class Mint:
@@ -27,35 +29,40 @@ class Mint:
 
     def __init__(self):
         self.tg = self.init_telegram()
-        self._pending = 0
         self.results = []
 
-    def handle_result(self, result: dict):
-        uri = result["@extra"]["rid"]
-        i = result["@extra"]["i"]
+    def handle_result(self, result):
+        if result is None:
+            return
+        extra = result.get("@extra")
+        if extra is None:
+            return
+        args = [extra.get(key) for key in ["uri", "i"]]
+        if not all(args):
+            return
+        uri, i = args
         if result["@type"] == "seconds":
-            ms = 1000 * result["seconds"]
+            ms = int(result["seconds"] * 1000)
             logging.info(" [%4d] %4d ms: %s", i, ms, uri)
             self.results.append((ms, uri))
         else:
             logging.debug("an error occurred while testing %s", uri)
-            logging.error("[%4d] error code %3d: %s", i, result["code"], result["message"])
+            logging.error("[%4d] error %3d: %s", i, result["code"], result["message"])
 
-    def test(self, proxies: list[Proxy], batch_size=10):
+    def test(self, proxies: list[Proxy], batch_size=64):
         i = 0
         for batch in batched(proxies, batch_size):
             for proxy in batch:
                 query = {
                     "@type": "pingProxy",
                     "proxy": asdict(proxy),
-                    "@extra": {"rid": proxy.uri, "i": i},
+                    "@extra": {"uri": proxy.uri, "i": i},
                 }
                 self.tg.send(query)
                 i += 1
             for proxy in batch:
                 result = self.tg.receive()
-                if result:
-                    self.handle_result(result)
+                self.handle_result(result)
 
     def init_telegram(self):
         envvars = dotenv_values()
@@ -70,12 +77,20 @@ class Mint:
         return tg
 
 
+def setup_logging(level=logging.INFO):
+    handlers = [
+        RichHandler(log_time_format="%X", show_path=False),
+        logging.FileHandler(".log", "a"),
+    ]
+    logging.basicConfig(level=level, handlers=handlers)
+
+
 def main():
     setup_logging()
     proxies = load_proxies()
     mint = Mint()
     try:
-        mint.test(proxies, 64)
+        mint.test(proxies)
         mint.results.sort()
         dump_results(mint.results)
     except KeyboardInterrupt:
