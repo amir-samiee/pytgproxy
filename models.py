@@ -161,8 +161,8 @@ class Mint:
             result  ##
             and (extra := result.get("@extra"))
             and (i := extra.get("i"))
-        ):
-            return
+        ): return  # fmt:off
+        # fmt:on
 
         proxy: Proxy = self._tests[i]
         uri = proxy.uri
@@ -172,5 +172,5 @@ class Mint:
             logging.info(" [%4d] %4d ms: %s", i, ms, uri)
             self.results.append((ms, uri))
         else:
-            _, _, address = uri.partition("://")
-            logging.error("[%4d] error %3d: %s %s", i, result["code"], result["message"], address)
+            code, message = map(result.get, ["code", "message"])
+            logging.error("[%4d] error %3d: %s [conceal]%s", i, code, message, uri)

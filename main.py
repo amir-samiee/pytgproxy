@@ -12,10 +12,11 @@ from rich.logging import RichHandler
 
 from models import *
 
-proxy_pools = (dotenv_values()["PROXY_POOLS"] or "").split()
+envvars = dotenv_values()
 
 
-def fetch_proxies(urls=proxy_pools):
+def fetch_proxies(urls=None):
+    urls = urls or (envvars["PROXY_POOLS"] or "").split()
     news = set()
     for i, url in enumerate(urls, 1):
         print(f"fetching resource {i}/{len(urls)}...", end="\r")
@@ -52,8 +53,8 @@ def dump_results(results: Sequence, path="results.csv", valid_only=True, mode="w
 
 def setup_logging(level=logging.INFO):
     handlers = [
-        RichHandler(log_time_format="%X", show_path=False),
-        logging.FileHandler(".log", "a"),
+        RichHandler(log_time_format="%X", show_path=False, markup=True),
+        logging.FileHandler(envvars["LOG_PATH"] or ".log", "a"),
     ]
     logging.basicConfig(level=level, handlers=handlers)
 
