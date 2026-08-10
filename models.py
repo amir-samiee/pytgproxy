@@ -3,7 +3,6 @@ from dataclasses import dataclass, fields, is_dataclass
 from itertools import batched
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-from dotenv import dotenv_values
 from telegram.tdjson import TDJson
 
 
@@ -124,14 +123,14 @@ class Mint:
             "@extra": {"request_id": "params"},
         }
 
-    def __init__(self):
-        self.tg = self.init_telegram()
+    def __init__(self, tdlib_path):
+        self.tg = self.init_telegram(tdlib_path)
         self.results = []
 
-    def init_telegram(self):
-        envvars = dotenv_values()
-        tg = TDJson(envvars["LIB_PATH"], 0)
-        tg.send(self.mock_params())
+    @classmethod
+    def init_telegram(cls, tdlib_path):
+        tg = TDJson(tdlib_path, 0)
+        tg.send(cls.mock_params())
         # to keep receiving updates until the
         # expected initial communication ends
         while True:  # ...
@@ -166,11 +165,12 @@ class Mint:
 
         proxy: Proxy = self._tests[i]
         uri = proxy.uri
+        mutual = f"{i:>3}:"
 
         if result["@type"] == "seconds":
             ms = int(result["seconds"] * 1000)
-            logging.info(" [%4d] %4d ms: %s", i, ms, uri)
+            logging.info(f"[green]{mutual} %-4d ms %s", ms, uri)
             self.results.append((ms, uri))
         else:
             code, message = map(result.get, ["code", "message"])
-            logging.error("[%4d] error %3d: %s [conceal]%s", i, code, message, uri)
+            logging.error(f"[red]{mutual} error %3d[/red] %s [dim]%s", code, message, uri)

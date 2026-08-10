@@ -38,13 +38,29 @@ A Python tool for testing and verifying Telegram proxy servers using TDLib's TDJ
 
 ## Configuration
 
-Here's how `.env` file should look like (at the project's root):
+Here's how your `.env` file should look like (at the project's root):
 
 ```ini
-LIB_PATH=path/to/libtdjson.so
+# TDLib library path
+TDLIB_PATH=./libtdjson.so
 
-PROXY_POOLS="https://example.com/some-proxies.txt
-https://github.com/other-source/other-proxies.txt"
+# Proxy pools (newline-separated URLs, alltogether inside a single pair of double quotes)
+PROXY_POOLS=""
+
+# Log file path
+LOG_PATH=.log
+
+# Default proxy file
+PROXY_FILE=proxies.txt
+
+# Default results file
+RESULTS_FILE=results.csv
+
+# Default results mode
+RESULTS_MODE=a
+
+# Default batch size
+BATCH_SIZE=64
 ```
 
 > **Important Note**: The following are example proxy sources that you may use at your own risk. The maintainer of this project takes no responsibility for the reliability, legality, or security of any third-party proxy sources. Always verify proxies before use and comply with all applicable laws in your jurisdiction.
@@ -115,7 +131,7 @@ tg://http?server=1.2.3.4&port=8080&username=user&password=pass&http_only=true
 ```
 *NOTE: Ignore the lines starting with `#`s. You don't actually need to separate different protocols.*
 ## Key Files 
-*(Configurable either via `.env` or commandline arguments)*
+*(Configurable via `.env` and/or commandline arguments)*
 - `proxies.txt`: List of proxy URIs to test
 - `results.csv`: Test results with response times in milliseconds and proxy URIs
   - Format: `response_time_ms,proxy_uri`
