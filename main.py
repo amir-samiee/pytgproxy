@@ -37,7 +37,7 @@ def fetch_proxies(poolurls) -> list[Proxy]:
 
 
 def dump_results(results: list, filepath: str, mode="w", pingkey=None, no_invalids=True):
-    if pingkey:
+    if pingkey is not None:
         if no_invalids:
             results = [res for res in results if res[pingkey] > 0]
         results.sort(key=lambda x: x[pingkey])
