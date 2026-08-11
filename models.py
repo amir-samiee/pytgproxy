@@ -125,7 +125,7 @@ class Mint:
 
     def __init__(self, tdlib_path):
         self.tg = self.init_telegram(tdlib_path)
-        self.results = []
+        self.results: list[tuple[int, str]] = []
 
     @classmethod
     def init_telegram(cls, tdlib_path):
@@ -165,11 +165,11 @@ class Mint:
 
         proxy: Proxy = self._tests[i]
         uri = proxy.uri
-        mutual = f"{i:>3}:"
+        mutual = f"/{i:<3}"
 
         if result["@type"] == "seconds":
             ms = int(result["seconds"] * 1000)
-            logging.info(f"[green]{mutual} %-4d ms %s", ms, uri)
+            logging.info(f"[green]{mutual} %4d ms %s", ms, uri)
             self.results.append((ms, uri))
         else:
             code, message = map(result.get, ["code", "message"])

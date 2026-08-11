@@ -54,7 +54,7 @@ LOG_PATH=.log
 PROXY_FILE=proxies.txt
 
 # Default results file
-RESULTS_FILE=results.csv
+RESULTS_FILE=results.tsv
 
 # Default results mode
 RESULTS_MODE=a
@@ -101,7 +101,7 @@ python main.py
 python main.py -p my_proxies.txt -b 32
 
 # Test and save results to a new file (overwrite mode)
-python main.py -r new_results.csv -m w
+python main.py -r new_results.tsv -m w
 
 # Update proxies and validate with verbose output
 python main.py -u -v
@@ -133,7 +133,7 @@ tg://http?server=1.2.3.4&port=8080&username=user&password=pass&http_only=true
 ## Key Files 
 *(Configurable via `.env` and/or commandline arguments)*
 - `proxies.txt`: List of proxy URIs to test
-- `results.csv`: Test results with response times in milliseconds and proxy URIs
+- `results.tsv`: Test results with response times in milliseconds and proxy URIs
   - Format: `response_time_ms,proxy_uri`
   - Only successful tests are saved by default
 - `.log`: Application log file with detailed debug information
