@@ -1,14 +1,16 @@
 certifi==2026.7.22
 charset-normalizer==3.4.9
+clipboard==0.0.4
 dotenv==0.9.9
 idna==3.18
 markdown-it-py==3.0.0
 mdurl==0.1.2
 Pygments==2.19.2
+pyperclip==1.11.0
 python-dotenv==1.0.1
 python-telegram==0.18.0
 requests==2.34.2
 rich==14.3.4
-setuptools<70
+setuptools==69.5.1
 telegram_text==0.2.0
 urllib3==2.7.0

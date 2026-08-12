@@ -66,6 +66,9 @@ def setup_logging(log_path, level=logging.INFO):
 def parse_args(**defaults):
     # fmt:off
     parser = argparse.ArgumentParser(description="Telegram proxy tester")
+    parser.add_argument("-U",
+        action="store_true", default=False,
+        help="the same as -u but would test the updated proxies immediately instead of exitting")
     parser.add_argument("-u", "--update",
         action="store_true", default=False,
         help="Update proxy list from the provided pools and exit")
@@ -103,9 +106,10 @@ def main():
     log_level = logging.DEBUG if args.verbose else logging.INFO
     setup_logging(args.log_path, log_level)
 
-    if args.update:
+    if args.update or args.U:
         update_proxies(args.pools, args.file)
-        return
+        if args.update:
+            return
 
     proxies = load_proxies(args.file)
     mint = Mint(args.tdlib_path)

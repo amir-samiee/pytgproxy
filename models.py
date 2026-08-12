@@ -173,4 +173,5 @@ class Mint:
             self.results.append((ms, uri))
         else:
             code, message = map(result.get, ["code", "message"])
-            logging.error(f"[red]{mutual} error %3d[/red] %s [dim]%s", code, message, uri)
+            logging.error(f"[red]{mutual} %4d %s [/][dim]%s", code, message, uri)
+        print(f"total: {len(self._tests)}", end="\r")
