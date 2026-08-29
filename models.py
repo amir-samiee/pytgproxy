@@ -169,7 +169,7 @@ class Mint:
 
         if result["@type"] == "seconds":
             ms = int(result["seconds"] * 1000)
-            logging.info(f"[green]{mutual} %4d ms %s", ms, uri)
+            logging.info(f"[green]{mutual} %4dms %s", ms, uri)
             self.results.append((ms, uri))
         else:
             code, message = map(result.get, ["code", "message"])

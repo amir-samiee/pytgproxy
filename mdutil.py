@@ -2,7 +2,8 @@ from pathlib import Path
 
 import clipboard
 from dotenv import dotenv_values
-from rich import print
+from rich import get_console
+from rich.markdown import Markdown
 
 from main import parse_args
 
@@ -17,16 +18,18 @@ if __name__ == "__main__":
         text = f"{ping}ms".center(9, "═")
         md.append(f"[{text}]({uri})")
     result = sep.join(md)
+
+    console = get_console()
     try:
         clipboard.copy(result)
     except BaseException as err:
-        print("\n\nunable to save to clipboard; cause:", err)
-        print("printing instead so you can copy it yourself:...\n\n")
-        print(result)
-        print("copy the above text and", end=" ")
+        console.print("\n\nunable to save to clipboard; cause:", err)
+        console.print("printing instead so you can copy it yourself:...\n\n")
+        console.print(Markdown(f"`{result}`"), soft_wrap=True)
+        console.print("copy the above text and", end=" ")
     else:
-        print("saved to clipboard.")
-    print(
+        console.print("saved to clipboard.")
+    console.print(
         "paste + send the copied content to telegram's @markdownbot chat to "  ##
         "get a more compact, accessible, and shareable list of proxies"
     )
