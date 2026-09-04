@@ -1,10 +1,11 @@
 import logging
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, fields, is_dataclass
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from telegram.tdjson import TDJson
+
+from common import handle_threading
 
 
 @dataclass
@@ -143,7 +144,7 @@ class Mint:
                 break
         return tg
 
-    def test(self, proxies: list[Proxy], batch_size=64):
+    def test(self, proxies: list[Proxy], max_workers=64):
         self._tests = proxies
         receive_locker = threading.Lock()
         ref_cont = [0]
@@ -161,19 +162,7 @@ class Mint:
                 result = self.tg.receive()  # keep track of total sent and received requests
             self.handle_result(result)
 
-        with ThreadPoolExecutor(max_workers=batch_size) as executor:
-            futures = [executor.submit(single, proxy) for proxy in proxies]
-            try:
-                for future in as_completed(futures):
-                    future.result()  # to raise exception if any
-            except KeyboardInterrupt:
-                logging.warning(
-                    "[yellow]    canceling/waiting for pending futures/midprocess workers...",
-                    extra={"markup": True},
-                )
-                raise
-            finally:
-                executor.shutdown(cancel_futures=True)
+        handle_threading(proxies, single, max_workers)
 
     def handle_result(self, result):
         if not (

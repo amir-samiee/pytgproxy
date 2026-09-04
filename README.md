@@ -57,7 +57,7 @@ PROXY_FILE=proxies.txt
 RESULTS_FILE=results.tsv
 
 # Default results mode
-RESULTS_MODE=a
+UPDATE_METHOD=a
 
 # Default batch size
 BATCH_SIZE=64
