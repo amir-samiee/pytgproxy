@@ -108,7 +108,10 @@ def _asdict(obj):
 
 
 class Mint:
-    """Mini Telegram Representative Object for TDJson's API, tailored for this specific purpose"""
+    """
+    Mini Telegram Representative Object for TDJson's
+    API, tailored for this specific purpose
+    """
 
     @classmethod
     def mock_params(cls):
@@ -125,7 +128,7 @@ class Mint:
 
     def __init__(self, tdlib_path):
         self.tg = self.init_telegram(tdlib_path)
-        self.results: list[tuple[int, str]] = []
+        self.results: list[tuple[str, int]] = []
 
     @classmethod
     def init_telegram(cls, tdlib_path):
@@ -170,7 +173,7 @@ class Mint:
         if result["@type"] == "seconds":
             ms = int(result["seconds"] * 1000)
             logging.info(f"[green]{mutual} %4dms %s", ms, uri)
-            self.results.append((ms, uri))
+            self.results.append((uri, ms))
         else:
             code, message = map(result.get, ["code", "message"])
             logging.error(f"[red]{mutual} %4d %s [/][dim]%s", code, message, uri)

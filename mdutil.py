@@ -5,7 +5,7 @@ from dotenv import dotenv_values
 from rich import get_console
 from rich.markdown import Markdown
 
-from main import parse_args
+from common import parse_args
 
 if __name__ == "__main__":
     args = parse_args(**dotenv_values())
