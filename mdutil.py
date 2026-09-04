@@ -14,7 +14,7 @@ if __name__ == "__main__":
     lines = content.splitlines()
     sep = "\t"
     md = []
-    for k, (ping, uri) in enumerate(map(str.split, lines), 1):
+    for k, (uri, ping) in enumerate(map(str.split, lines), 1):
         text = f"{ping}ms".center(9, "═")
         md.append(f"[{text}]({uri})")
     result = sep.join(md)
@@ -30,6 +30,6 @@ if __name__ == "__main__":
     else:
         console.print("saved to clipboard.")
     console.print(
-        "paste + send the copied content to telegram's @markdownbot chat to "  ##
-        "get a more compact, accessible, and shareable list of proxies"
+        "paste + send the copied content to any telegram markdown-rendering bot (e.g. "
+        "@mdeditorbot) to get a more compact, accessible, and shareable list of proxies"
     )

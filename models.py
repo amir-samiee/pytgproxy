@@ -1,6 +1,7 @@
 import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, fields, is_dataclass
-from itertools import batched
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from telegram.tdjson import TDJson
@@ -136,7 +137,7 @@ class Mint:
         tg.send(cls.mock_params())
         # to keep receiving updates until the
         # expected initial communication ends
-        while True:  # ...
+        while True:
             value = tg.receive() or {}
             if value.get("@type") == "updateConnectionState":
                 break
@@ -144,19 +145,35 @@ class Mint:
 
     def test(self, proxies: list[Proxy], batch_size=64):
         self._tests = proxies
-        i = 0
-        for batch in batched(proxies, batch_size):
-            for proxy in batch:
-                query = {
-                    "@type": "pingProxy",
-                    "proxy": _asdict(proxy),
-                    "@extra": {"i": i},
-                }
-                self.tg.send(query)
-                i += 1
-            for proxy in batch:
-                result = self.tg.receive()
-                self.handle_result(result)
+        receive_locker = threading.Lock()
+        ref_cont = [0]
+
+        def single(proxy):
+            query = {
+                "@type": "pingProxy",
+                "proxy": _asdict(proxy),
+                "@extra": {"i": ref_cont[0]},
+            }
+            self.tg.send(query)
+            ref_cont[0] += 1
+            with receive_locker:
+                # not necessarily the request that's been just sent, but generally helps ...
+                result = self.tg.receive()  # keep track of total sent and received requests
+            self.handle_result(result)
+
+        with ThreadPoolExecutor(max_workers=batch_size) as executor:
+            futures = [executor.submit(single, proxy) for proxy in proxies]
+            try:
+                for future in as_completed(futures):
+                    future.result()  # to raise exception if any
+            except KeyboardInterrupt:
+                logging.warning(
+                    "[yellow]    canceling/waiting for pending futures/midprocess workers...",
+                    extra={"markup": True},
+                )
+                raise
+            finally:
+                executor.shutdown(cancel_futures=True)
 
     def handle_result(self, result):
         if not (
@@ -177,4 +194,4 @@ class Mint:
         else:
             code, message = map(result.get, ["code", "message"])
             logging.error(f"[red]{mutual} %4d %s [/][dim]%s", code, message, uri)
-        print(f"total: {len(self._tests)}", end="\r")
+        print(f"total: {len(self._tests)}\r", end="")  # end="\r" messes up on keyboard interrupt

@@ -1,14 +1,16 @@
 import argparse
 import csv
 import logging
+from collections.abc import Callable
+from typing import Any
 
 import requests
 from dotenv import dotenv_values
 from rich.logging import RichHandler
 
 
-def fetch_uris(poolurls):
-    frags = set()
+def fetch_uris(poolurls, validator: Callable[[Any], bool | Any] | None = None):
+    fragments = set()
     for i, url in enumerate(poolurls, 1):
         print(f"fetching source {i}/{len(poolurls)}", end="\r")
         try:
@@ -19,8 +21,9 @@ def fetch_uris(poolurls):
             logging.warning("skipping due to error: %s", err)
             continue
         if response.ok:
-            frags.update(response.text.split())
-    return frags
+            fetched = response.text.split()
+            fragments.update(filter(validator, fetched) if validator else fetched)
+    return fragments
 
 
 def dump_rows(results: list, filepath: str, mode="w", pingkey=None, no_invalids=True):
