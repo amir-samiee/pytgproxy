@@ -12,19 +12,23 @@ from rich.logging import RichHandler
 
 def fetch_uris(poolurls, validator: Callable[[Any], bool] | None = None):
     fragments = set()
+    uris = []
     for i, url in enumerate(poolurls, 1):
         print(f"fetching source {i}/{len(poolurls)}", end="\r")
         try:
             response = requests.get(url)
         except KeyboardInterrupt:
             break
-        except BaseException as err:
+        except Exception as err:
             logging.warning("skipping due to error: %s", err)
             continue
         if response.ok:
             fetched = response.text.split()
-            fragments.update(filter(validator, fetched) if validator else fetched)
-    return list(fragments)  # returning list for ease of use
+            if validator:
+                fetched = list(filter(validator, fetched))
+            uris.extend(filter(lambda frg: frg not in fragments, fetched))
+            fragments.update(fetched)
+    return uris
 
 
 def dump_rows(results: Iterable, filepath: str, mode="w", pingkey=None, no_invalids=True):
@@ -50,7 +54,7 @@ def setup_logging(log_path, level=logging.INFO):
 
 def parse_args(**defaults):
     # fmt:off
-    parser = argparse.ArgumentParser(description="Telegram proxy tester")
+    parser = argparse.ArgumentParser(description="Telegram proxy tester (and also other proxy types)")
     parser.add_argument("-U",
         action="store_true", default=False,
         help="similar to -u but also runs the program as usual after the update, instead of exiting")
@@ -60,9 +64,9 @@ def parse_args(**defaults):
     parser.add_argument("-v", "--verbose",
         action="store_true", default=defaults.get("VERBOSE", False),
         help="Enable verbose logging")
-    parser.add_argument("-m", "--mode",
-        default=defaults.get("MODE", "t"), choices="ta",
-        help="run mode; select t to test telegram proxies (requires TDLib binary), otherwise a for any proxy type")
+    parser.add_argument("-r", "--use-requests",
+        action="store_true", default=False,
+        help="test proxies the regular way (using requests module) and not with TDLib, also works with a variety of proxy types other than Telegram-specific ones")
     parser.add_argument("-M", "--method",
         default=defaults.get("UPDATE_METHOD", "a"), choices="aw",
         help="The method using which to open the output file and update the results")
@@ -88,13 +92,13 @@ def parse_args(**defaults):
     # fmt:on
 
 
-def init_with_args():
+def init_with_args(**kwargs):
     """mutual initialization code"""
     defaults = {k: v for k, v in dotenv_values().items() if v}
     args = parse_args(**defaults)
 
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    setup_logging(args.log_path, log_level)
+    log_level = kwargs.get("log_level", logging.DEBUG if args.verbose else logging.INFO)
+    setup_logging(args.logfile, log_level)
 
     return args
 
@@ -105,20 +109,28 @@ def handle_threading(proxies, submitter, max_workers=64):
     provides implementation of the proxy testing for a single proxy,
     creates a pool of threads and handles the threading part of testing
 
+    for best results, use:
+    ```
+    results = []
+    try:
+        results.extend(handle_threading(proxies, submitter))
+    except KeyboardInterrupt:
+        ...
+    except Exception as exception:
+        ...  # (rest of handling)
+    ```
+
     NOTE: the elements of proxies and the single argument of the
     submitter can be of any type, as long as they're type-compatible
     """
-    results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(submitter, proxy) for proxy in proxies]
         try:
             for future in as_completed(futures):
-                results.append(future.result())
+                yield future.result()
         except KeyboardInterrupt:
             message = "[yellow] canceling pending futures and awaiting running works..."
-            logging.warning(message, extra={"markup": True})
+            logging.log(15, message, extra={"markup": True})
             raise
-        else:
-            return results
         finally:
             executor.shutdown(cancel_futures=True)

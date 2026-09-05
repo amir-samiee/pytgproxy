@@ -162,7 +162,8 @@ class Mint:
                 result = self.tg.receive()  # keep track of total sent and received requests
             self.handle_result(result)
 
-        handle_threading(proxies, single, max_workers)
+        for _ in handle_threading(proxies, single, max_workers):
+            pass
 
     def handle_result(self, result):
         if not (
