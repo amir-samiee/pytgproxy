@@ -1,5 +1,5 @@
 .env
-lab.py
+*_lab.*
 proxies.txt
 results.*
 types.json

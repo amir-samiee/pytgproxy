@@ -1,11 +1,12 @@
 import logging
 import threading
+from collections.abc import Iterable
 from dataclasses import dataclass, fields, is_dataclass
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from telegram.tdjson import TDJson
 
-from common import handle_threading
+from common import handle_threading, ping_url
 
 
 @dataclass
@@ -144,8 +145,8 @@ class Mint:
                 break
         return tg
 
-    def test(self, proxies: list[Proxy], max_workers=64):
-        self._tests = proxies
+    def test(self, proxies: Iterable[Proxy], max_workers=64):
+        self._tests = list(proxies)
         receive_locker = threading.Lock()
         ref_cont = [0]
 
@@ -185,3 +186,33 @@ class Mint:
             code, message = map(result.get, ["code", "message"])
             logging.error(f"[red]{mutual} %4d %s [/][dim]%s", code, message, uri)
         print(f"total: {len(self._tests)}\r", end="")  # end="\r" messes up on keyboard interrupt
+
+
+class GenericManager:
+    def __init__(self, target: str, timeout=5):
+        self._i = self._total = 0
+        self.target = target
+        self.timeout = timeout
+
+    def _submitter(self, uri):
+        proxies = {"http": uri, "https": uri}
+        extra = {"markup": True}
+        ping, message = 0, ""
+
+        try:
+            ping = ping_url(self.target, True, proxies=proxies, timeout=self.timeout)
+        except Exception as error:
+            message = f"[red]{error.__class__}: {error.__doc__ or ''}"
+            firstline = message.splitlines()[0]
+            logging.error(firstline, extra=extra)
+            logging.debug("more info on the previous error: %s", error)
+        else:
+            logging.info(f"{uri} [bold blue]{ping}ms", extra=extra)
+
+        self._i += 1
+        print(f"id: {self._i}/{self._total}\r", end="")
+        return (uri, ping, message) if message else (uri, ping)
+
+    def ping_proxies(self, proxies):
+        self._total = len(proxies)
+        yield from handle_threading(proxies, self._submitter)
