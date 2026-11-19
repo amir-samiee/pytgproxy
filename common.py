@@ -7,9 +7,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import perf_counter
 from typing import Any
 
+import dotenv
 import requests
-from dotenv import dotenv_values
 from rich.logging import RichHandler
+from urllib3.util import parse_url
+
+
+def is_generic(uri: str):
+    """specifies whether a uri can be a non-telegram-specific proxy or not"""
+    return not any(tg_schema in uri for tg_schema in ["tg://", "t.me/"])
 
 
 def fetch_uris(pools, validator: Callable[[Any], bool] | None = None, normalize=True) -> list[str]:
@@ -58,7 +64,7 @@ def setup_logging(log_path, level=logging.INFO):
         show_level=True,
     )
     handlers = [rich_handler, file_handler]
-    # FORMAT = "%(asctime)s %(levelname)-5s %(message)s"
+    # FORMAT = "%(asctime)s %(levelname)-5s %(message)s %(filename)s:%(lineno)s"
     FORMAT = "%(message)s"
     logging.basicConfig(level=level, handlers=handlers, format=FORMAT, datefmt="%X")
 
@@ -80,34 +86,52 @@ def dump_uris_from_pools(pools, filepath, validator=None, normalize=True, shuffl
     dump_rows(uris, filepath)
 
 
-def parse_args(**defaults):
+def _parse_args():
+    # TODO: once for always resolve this passed (and unpassed) parameters
+    # e = anything from .env
+    # a = anything from args
+    # r = anything required (in case not set)
+    # r | e | a
+    # TODO: update readme and .env.example
     # fmt:off
-    parser = argparse.ArgumentParser(description="Telegram proxy tester (and also other proxy types)")
-    parser.add_argument("-l", "--logfile", default=defaults.get("LOG_PATH", ".log"), help="Path to log file (overrides LOG_PATH in .env)")
-    parser.add_argument("-m", "--method", default=defaults.get("UPDATE_METHOD", "a"), choices="aw", help="Method using which to open the output file and update the results")
-    parser.add_argument("-o", "--out", default=defaults.get("RESULTS_FILE", "results.tsv"), help="Path to output (results) file")
-    parser.add_argument("-p", "--proxies", default=defaults.get("PROXY_FILE", "proxies.txt"), help="File containing proxies to be tested (overrides PROXY_FILE in .env)")
-    parser.add_argument("-P", "--pools", default=defaults.get("PROXY_POOLS",'').split(), help="Space-separated URLs for proxy pools (overrides PROXY_POOLS in .env); optionally you can add a literal # followed by a protocol (e.g. http, socks5) to add all proxies from that pool with the identified protocol")
-    parser.add_argument("-r", "--use-requests", default=False, help="Test proxies the regular way (using requests module) and not with TDLib, also works with a variety of proxy types other than Telegram-specific ones", action="store_true")
-    parser.add_argument("-t", "--tdlib-path", default=defaults.get("TDLIB_PATH", "./libtdjson.so"), help="Path to TDLib binary (overrides TDLIB_PATH in .env)")
-    parser.add_argument("-T", "--target", default=defaults.get("TARGET_URL", "https://1.1.1.1"), help="Target URL to test proxies against")
-    parser.add_argument("-u", "--update", default=False, help="Update proxy list from the provided pools and exit", action="store_true")
-    parser.add_argument("-U", default=False, help="Similar to -u but also runs the program as usual after the update, instead of exiting", action="store_true")
-    parser.add_argument("-v", "--verbose", default=defaults.get("VERBOSE", False), help="Enable verbose logging", action="store_true")
-    parser.add_argument("-w", "--max-workers", type=int, default=defaults.get("BATCH_SIZE", 32), help="Batch size for testing proxies")
-    return parser.parse_args() 
+    parser = argparse.ArgumentParser(
+        description="Telegram proxy tester (and also other proxy types)"
+    )
+    parser.add_argument("-l", "--logfile", help="Path to log file (overrides `logfile` in .env)")
+    parser.add_argument("-m", "--method", choices="aw", help="Method using which to open the output file and update the results")
+    parser.add_argument("-o", "--out", help="Path to output (results) file")
+    parser.add_argument("-p", "--proxyfile", help="File containing proxies to be tested (overrides `proxyfile` in .env)")
+    parser.add_argument("-P", "--pools", nargs="+", help="Whitespace-separated URLs for proxy pools (overrides `pools` in .env); optionally you can add a literal # followed by a protocol (e.g. http, socks5) to add all proxies from that pool with the identified protocol")
+    # parser.add_argument("-r", "--use-requests", default=False, help="Test proxies the regular way (using requests module) and not with TDLib, also works with a variety of proxy types other than Telegram-specific ones", action="store_true")
+    parser.add_argument("-t", "--tdlib-path", help="Path to TDLib binary (overrides `tdlib-path` in .env)")
+    parser.add_argument("-T", "--target", help="Target URL to test proxies against")
+    parser.add_argument("-u", "--update", help="Update proxy list from the provided pools and exit", action="store_true")
+    parser.add_argument("-U", "--update-run", help="Similar to -u but also runs the program as usual after the update, instead of exiting", action="store_true")
+    parser.add_argument("-v", "--verbose", help="Enable verbose logging", action="store_true")
+    parser.add_argument("-w", "--max-workers", type=int, help="Batch size for testing proxies")
+    return parser.parse_args()
     # fmt:on
 
 
-def init_with_args(**kwargs):
+def handle_clargs():
     """mutual initialization code"""
-    defaults = {k: v for k, v in dotenv_values().items() if v}
-    args = parse_args(**defaults)
-
-    log_level = kwargs.get("log_level", logging.DEBUG if args.verbose else logging.INFO)
-    setup_logging(args.logfile, log_level)
-
-    return args
+    from_dotenv = {k: v for k, v in dotenv.dotenv_values().items() if v}
+    from_args = {k: v for k, v in _parse_args().__dict__.items() if v is not None}
+    required_defaults = {
+        "logfile": ".log",
+        "tdlib_path": "tdjson.dll",
+        "proxyfile": "proxies.txt",
+        "max-workers": 20,
+        "method": "w",
+    }
+    config = required_defaults | from_dotenv | from_args
+    setup_logging(config["logfile"], logging.DEBUG if config.get("verbose") else logging.INFO)
+    target = config.get("target")
+    if not config.get("out"):
+        no_ext = parse_url(target).host if target else "tg_proxies"
+        config["out"] = f"{no_ext}.tsv"
+    config["pools"] = config.setdefault("pools", "").split()
+    return config
 
 
 def handle_threading(proxies, submitter, max_workers=64):
@@ -136,7 +160,7 @@ def handle_threading(proxies, submitter, max_workers=64):
             for future in as_completed(futures):
                 yield future.result()
         except KeyboardInterrupt:
-            message = "[yellow] canceling pending futures and awaiting running works..."
+            message = "[yellow]canceling pending futures and awaiting running works..."
             logging.warning(message, extra={"markup": True})
             raise
         finally:

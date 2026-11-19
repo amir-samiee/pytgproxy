@@ -191,6 +191,8 @@ class Mint:
 class GenericManager:
     def __init__(self, target: str, timeout=5):
         self._i = self._total = 0
+        if "://" not in target:
+            target = "https://" + target
         self.target = target
         self.timeout = timeout
 
@@ -202,12 +204,13 @@ class GenericManager:
         try:
             ping = ping_url(self.target, True, proxies=proxies, timeout=self.timeout)
         except Exception as error:
-            message = f"[red]{error.__class__}: {error.__doc__ or ''}"
+            message = f"{error.__class__.__name__}: [red]{error.__doc__ or ''} - uri: {uri}"
             firstline = message.splitlines()[0]
             logging.error(firstline, extra=extra)
-            logging.debug("more info on the previous error: %s", error)
+            logging.debug("more info on the previous error: %s", repr(error))
+            # logging.error(repr(error))
         else:
-            logging.info(f"{uri} [bold blue]{ping}ms", extra=extra)
+            logging.info(f"[italic green]{uri} {ping}ms", extra=extra)
 
         self._i += 1
         print(f"id: {self._i}/{self._total}\r", end="")
